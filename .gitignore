@@ -1,0 +1,58 @@
+# Dataset
+dataset/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+env/
+.env/
+.venv/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Model weights and outputs
+*.pt
+*.pth
+*.onnx
+*.engine
+*.mlmodel
+*.tflite
+runs/
+weights/
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.*
