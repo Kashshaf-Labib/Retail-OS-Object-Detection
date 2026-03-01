@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShelfVision AI — Retail Shelf Detection</title>
+    <meta name="description" content="YOLOv11-based retail shelf product detection with Share of Shelf analytics and data drift monitoring.">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- ── Header ── -->
+    <header class="header">
+        <div class="header-brand">
+            <span class="logo">🔍</span>
+            <h1>ShelfVision <span class="accent">AI</span></h1>
+        </div>
+        <p class="subtitle">YOLOv11m · 76 SKU Classes · 1280×1280</p>
+        <div id="drift-badge" class="drift-badge healthy" title="Data Drift Status">
+            <span class="drift-dot"></span>
+            <span id="drift-label">HEALTHY</span>
+        </div>
+    </header>
+
+    <!-- ── Tab Navigation ── -->
+    <nav class="tabs">
+        <button class="tab active" data-tab="detect" id="tab-detect">🎯 Detect</button>
+        <button class="tab" data-tab="shelf" id="tab-shelf">📊 Share of Shelf</button>
+        <button class="tab" data-tab="experiments" id="tab-experiments">🧪 Experiments</button>
+        <button class="tab" data-tab="drift" id="tab-drift">📡 Drift Monitor</button>
+    </nav>
+
+    <!-- ── Tab: Detect ── -->
+    <section class="tab-content active" id="content-detect">
+        <div class="card">
+            <h2>Object Detection</h2>
+            <p class="card-desc">Upload a shelf image to detect products with bounding boxes.</p>
+            <div class="upload-zone" id="detect-dropzone">
+                <input type="file" id="detect-input" accept="image/jpeg,image/png" hidden>
+                <div class="upload-icon">📸</div>
+                <p>Drag & drop an image or <span class="link" onclick="document.getElementById('detect-input').click()">browse</span></p>
+                <p class="upload-hint">JPEG or PNG, max 10MB</p>
+            </div>
+            <div class="controls">
+                <label>
+                    Confidence: <strong id="conf-val">0.25</strong>
+                    <input type="range" id="conf-slider" min="0.05" max="0.95" step="0.05" value="0.25">
+                </label>
+                <button class="btn" id="detect-btn" disabled>Run Detection</button>
+            </div>
+            <div id="detect-preview" class="preview-area" style="display:none">
+                <img id="detect-preview-img" alt="Preview">
+            </div>
+        </div>
+        <div class="card" id="detect-results" style="display:none">
+            <h2>Results</h2>
+            <div class="result-stats">
+                <div class="stat"><span id="result-count">0</span><small>Detections</small></div>
+            </div>
+            <div class="result-image">
+                <img id="result-img" alt="Annotated result">
+            </div>
+            <div id="detect-table-wrap" style="display:none">
+                <h3>Detection Details</h3>
+                <table class="data-table" id="detect-table">
+                    <thead><tr><th>#</th><th>SKU</th><th>Confidence</th><th>Bbox</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Tab: Share of Shelf ── -->
+    <section class="tab-content" id="content-shelf">
+        <div class="card">
+            <h2>Share of Shelf Analytics</h2>
+            <p class="card-desc">Upload a shelf image to see the percentage breakdown of each SKU.</p>
+            <div class="upload-zone" id="shelf-dropzone">
+                <input type="file" id="shelf-input" accept="image/jpeg,image/png" hidden>
+                <div class="upload-icon">🛒</div>
+                <p>Drag & drop or <span class="link" onclick="document.getElementById('shelf-input').click()">browse</span></p>
+            </div>
+            <button class="btn" id="shelf-btn" disabled>Analyze Shelf</button>
+        </div>
+        <div class="card" id="shelf-results" style="display:none">
+            <h2>SKU Distribution</h2>
+            <div class="result-stats">
+                <div class="stat"><span id="shelf-total">0</span><small>Total Products</small></div>
+                <div class="stat"><span id="shelf-unique">0</span><small>Unique SKUs</small></div>
+            </div>
+            <div class="chart-container">
+                <canvas id="shelf-bar-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="shelf-pie-chart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Tab: Experiments ── -->
+    <section class="tab-content" id="content-experiments">
+        <div class="card">
+            <h2>Experiment Log</h2>
+            <p class="card-desc">All model training runs and their metrics.</p>
+            <table class="data-table" id="exp-table">
+                <thead>
+                    <tr>
+                        <th>Model</th><th>ImgSz</th><th>Dataset</th>
+                        <th>Precision</th><th>Recall</th><th>mAP@50</th><th>mAP@50-95</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="exp-body"></tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h2>Metrics Comparison</h2>
+            <div class="chart-container">
+                <canvas id="exp-chart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Tab: Drift Monitor ── -->
+    <section class="tab-content" id="content-drift">
+        <div class="card">
+            <h2>Data Drift Monitor</h2>
+            <p class="card-desc">Real-time monitoring of prediction distribution shifts.</p>
+            <div class="drift-panel">
+                <div class="drift-metric">
+                    <h3>Status</h3>
+                    <span id="drift-status-label" class="drift-status-big healthy">HEALTHY</span>
+                </div>
+                <div class="drift-metric">
+                    <h3>PSI Score</h3>
+                    <span id="drift-psi">0.0000</span>
+                    <small>Threshold: 0.2</small>
+                </div>
+                <div class="drift-metric">
+                    <h3>Avg Confidence</h3>
+                    <span id="drift-conf">0.00%</span>
+                    <small>Baseline: 65%</small>
+                </div>
+                <div class="drift-metric">
+                    <h3>Predictions Logged</h3>
+                    <span id="drift-count">0</span>
+                </div>
+            </div>
+            <p id="drift-message" class="drift-msg"></p>
+            <button class="btn btn-secondary" id="drift-refresh">🔄 Refresh Status</button>
+        </div>
+    </section>
+
+    <!-- ── Loading Overlay ── -->
+    <div class="loading-overlay" id="loading" style="display:none">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <footer>
+        <p>ShelfVision AI · YOLOv11m · Built with FastAPI + Docker</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
