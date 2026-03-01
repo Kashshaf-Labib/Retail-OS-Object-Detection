@@ -1,58 +1,40 @@
-# Dataset
-dataset/
-
-# Python
+# ── Python ──
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-*.egg
 *.egg-info/
 dist/
 build/
-eggs/
-*.manifest
-*.spec
-pip-log.txt
-pip-delete-this-directory.txt
+.eggs/
+*.egg
 
-# Virtual environments
+# ── Virtual Environment ──
 venv/
-env/
-.env/
 .venv/
+env/
 
-# IDE / Editor
+# ── IDE ──
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.project
-.settings/
 
-# Jupyter Notebook
-.ipynb_checkpoints/
+# ── Dataset (too large for git) ──
+data/
+dataset/
+*.pt
+!models/.gitkeep
 
-# OS files
+# ── Training Outputs ──
+runs/
+wandb/
+
+# ── OS ──
 .DS_Store
 Thumbs.db
-desktop.ini
 
-# Model weights and outputs
-*.pt
-*.pth
-*.onnx
-*.engine
-*.mlmodel
-*.tflite
-runs/
-weights/
-
-# Logs
-*.log
-logs/
-
-# Environment variables
+# ── Environment ──
 .env
-.env.*
+*.log
+
+# ── Docker ──
+docker-compose.override.yml
