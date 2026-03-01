@@ -1,0 +1,23 @@
+# Exclude large/unnecessary files from Docker build context
+dataset/
+data/
+notebooks/
+.git/
+.github/
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+runs/
+wandb/
+*.log
+.env
+.DS_Store
+Thumbs.db
+README.md
+LICENSE
+pyproject.toml
+requirements-dev.txt
+colab_*.py
+kaggle_*.py
