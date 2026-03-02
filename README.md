@@ -473,6 +473,45 @@ Augmented copies of minority class images were created using 6 random transforms
 
 ---
 
+## Share of Shelf Analytics
+
+The entire test dataset was treated as a single representative store shelf. The best model (YOLOv8m Stratified + Oversample) was used to detect all products, and the percentage share of each SKU was calculated.
+
+### Key Findings
+
+| Metric | Value |
+|--------|-------|
+| Total products detected | 198 |
+| Most dominant SKU | q64 (14.1%) |
+| Top 5 SKUs coverage | 54.1% of total shelf |
+| Top 10 SKUs coverage | 73.8% of total shelf |
+
+The analysis reveals a highly concentrated shelf layout where the **top 10 SKUs account for nearly three-quarters of all shelf space**, consistent with typical retail planogram strategies where high-demand products receive disproportionate shelf allocation.
+
+### Top 10 SKUs by Share of Shelf
+
+| Rank | SKU | Detections | Share (%) |
+|------|-----|:----------:|:---------:|
+| 1 | q64 | 28 | 14.1% |
+| 2 | q280 | 24 | 12.1% |
+| 3 | q91 | 22 | 11.1% |
+| 4 | q13 | 18 | 9.1% |
+| 5 | q145 | 15 | 7.6% |
+| 6 | q262 | 10 | 5.1% |
+| 7 | q289 | 8 | 4.0% |
+| 8 | q40 | 8 | 4.0% |
+| 9 | q8 | 7 | 3.5% |
+| 10 | q66 | 6 | 3.0% |
+
+### Share of Shelf Distribution
+
+<!-- Place your doughnut chart image here. See instructions below. -->
+![Share of Shelf Distribution - Share of Shelf Top 20](assets/share_of_shelf_top20.png)
+
+> The full analysis with 5 visualizations (bar chart, full distribution, doughnut, confidence scatter, detection heatmap) is provided in the Google Drive.
+
+---
+
 ## API Reference
 
 The FastAPI server exposes 5 endpoints with interactive documentation at `/docs`.
