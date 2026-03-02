@@ -435,22 +435,157 @@ Exp 11 v8m+SGD     83.45%      89.39%    Stratified+SGD no OS -- highest P
 
 Based on the class imbalance analysis, a multi-step rebalancing pipeline was developed (see `notebooks/01_preprocessing.ipynb` and `notebooks/03_stratified_training.py`).
 
-### Stratified Splitting (Primary Approach)
+### Step 1: Pooling All Images
 
-The original dataset split had 4 classes with zero training samples and many classes missing from valid/test. A stratified re-split was applied:
+The original split was discarded and all images were pooled into a single collection:
 
-1. **Pool all images** from train/valid/test into a single collection (999 images)
-2. **Assign dominant class** per image (most frequent class in that image)
-3. **Stratified split** 80/10/10 using sklearn's train_test_split, stratifying on dominant class
-4. **Handle rare classes**: Classes with <3 images forced into train; singleton classes in temp set alternately assigned to valid/test
+| Metric | Value |
+|--------|-------|
+| Original train | 924 images |
+| Original valid | 40 images |
+| Original test | 35 images |
+| **Total pooled** | **999 images** |
+| **Total annotations** | **4,323** |
+| **Classes** | **76** |
 
-Result: **799 train / 100 valid / 100 test** with proportional representation across all classes.
+#### Classes with Fewest Instances (Entire Pool)
 
-### Oversampling (Optional Enhancement)
+| Class | Instances |
+|-------|:---------:|
+| q163 | 10 |
+| q190 | 9 |
+| q169 | 6 |
+| q130 | 6 |
+| q232 | 6 |
+| q271 | 6 |
+| q79 | 6 |
+| q229 | 6 |
+| q46 | 5 |
+| q178 | 2 |
 
-Minority classes with fewer than 15 training instances were oversampled by duplicating images containing those classes.
+### Step 2: Stratified Split (80/10/10)
 
-### Targeted Augmentation
+1. **Assign dominant class** per image (most frequent class in that image's annotations)
+2. **Identify rare classes**: Classes with fewer than 3 images as dominant were forced into train (1 class: q46)
+3. **First split**: 80% train / 20% temp, stratified on dominant class
+4. **Handle singletons**: 22 classes had only 1 sample in the temp set -- these were alternately assigned to valid/test instead of crashing the stratified splitter
+5. **Second split**: Remaining temp split 50/50 into valid/test, stratified on dominant class
+
+**Result:**
+
+| Split | Images | Percentage |
+|-------|:------:|:----------:|
+| Train | 799 | 80.0% |
+| Valid | 100 | 10.0% |
+| Test | 100 | 10.0% |
+
+### Step 3: Stratification Quality Check
+
+The key improvement: **zero-train classes dropped from 3 to 0**, and every class now has proportional representation across splits.
+
+<details>
+<summary>Full per-class breakdown: Original Train vs Stratified Train/Valid/Test (click to expand)</summary>
+
+| Class | Orig Train | Strat Train | Strat Val | Strat Test |
+|-------|:----------:|:-----------:|:---------:|:----------:|
+| q280 | 393 | 359 | 40 | 44 |
+| q13 | 384 | 353 | 61 | 22 |
+| q145 | 357 | 294 | 30 | 45 |
+| q64 | 225 | 169 | 28 | 28 |
+| q91 | 221 | 181 | 25 | 19 |
+| q262 | 162 | 131 | 19 | 17 |
+| q289 | 114 | 89 | 12 | 21 |
+| q214 | 99 | 86 | 19 | 13 |
+| q121 | 99 | 79 | 10 | 14 |
+| q202 | 99 | 84 | 6 | 12 |
+| q109 | 93 | 81 | 6 | 12 |
+| q193 | 87 | 80 | 12 | 5 |
+| q31 | 63 | 75 | 0 | 22 |
+| q250 | 81 | 72 | 8 | 4 |
+| q256 | 69 | 54 | 11 | 9 |
+| q286 | 60 | 54 | 6 | 8 |
+| q4 | 60 | 55 | 4 | 5 |
+| q220 | 60 | 54 | 3 | 6 |
+| q142 | 57 | 49 | 5 | 6 |
+| q293 | 42 | 45 | 10 | 3 |
+| q175 | 48 | 46 | 6 | 5 |
+| q7 | 54 | 46 | 4 | 6 |
+| q112 | 48 | 45 | 5 | 4 |
+| q16 | 45 | 35 | 6 | 8 |
+| q199 | 45 | 39 | 6 | 3 |
+| q22 | 48 | 36 | 6 | 6 |
+| q299 | 44 | 39 | 5 | 2 |
+| q82 | 42 | 30 | 6 | 6 |
+| q94 | 42 | 34 | 3 | 5 |
+| q151 | 39 | 31 | 2 | 8 |
+| q52 | 39 | 30 | 6 | 4 |
+| q67 | 33 | 25 | 6 | 4 |
+| q115 | 30 | 29 | 5 | 1 |
+| q61 | 24 | 24 | 4 | 2 |
+| q70 | 30 | 22 | 8 | 0 |
+| q58 | 30 | 24 | 4 | 2 |
+| q106 | 21 | 23 | 2 | 2 |
+| q157 | 18 | 18 | 0 | 6 |
+| q40 | 24 | 20 | 4 | 0 |
+| q100 | 21 | 19 | 2 | 1 |
+| q1 | 21 | 18 | 3 | 0 |
+| q136 | 21 | 17 | 2 | 2 |
+| q88 | 21 | 17 | 2 | 2 |
+| q34 | 21 | 17 | 2 | 2 |
+| q291 | 21 | 16 | 3 | 2 |
+| q25 | 18 | 14 | 2 | 2 |
+| q133 | 18 | 14 | 2 | 2 |
+| q55 | 18 | 14 | 2 | 2 |
+| q196 | 18 | 15 | 1 | 2 |
+| q274 | 18 | 15 | 1 | 2 |
+| q97 | 18 | 15 | 3 | 0 |
+| q265 | 12 | 12 | 2 | 2 |
+| q187 | 12 | 13 | 1 | 2 |
+| q184 | 15 | 13 | 2 | 1 |
+| q148 | 15 | 12 | 3 | 0 |
+| q118 | 12 | 10 | 2 | 2 |
+| q49 | 9 | 9 | 0 | 5 |
+| q211 | 12 | 11 | 0 | 2 |
+| q103 | 12 | 9 | 3 | 0 |
+| q76 | 12 | 8 | 0 | 4 |
+| q19 | 12 | 9 | 2 | 1 |
+| q37 | 12 | 9 | 2 | 1 |
+| q268 | 9 | 10 | 1 | 1 |
+| q10 | 6 | 8 | 0 | 2 |
+| q247 | 9 | 7 | 1 | 2 |
+| q73 | 9 | 9 | 1 | 0 |
+| q163 | 9 | 9 | 0 | 1 |
+| q190 | 9 | 6 | 0 | 3 |
+| q130 | 6 | 4 | 0 | 2 |
+| q232 | 6 | 6 | 0 | 0 |
+| q169 | 6 | 6 | 0 | 0 |
+| q229 | **0** | 4 | 2 | 0 |
+| q79 | 6 | 4 | 0 | 2 |
+| q271 | 6 | 5 | 0 | 1 |
+| q46 | **0** | 5 | 0 | 0 |
+| q178 | **0** | 2 | 0 | 0 |
+
+</details>
+
+### Step 4: Oversampling Minority Classes
+
+Minority classes (fewer than 15 training instances) were oversampled by duplicating images containing those classes:
+
+| Metric | Value |
+|--------|-------|
+| Images oversampled | 115 |
+| Final training images | 914 |
+
+### Summary
+
+| Metric | Original Split | Stratified Split |
+|--------|:--------------:|:----------------:|
+| Zero-train classes | 3 | **0** |
+| Train images | 924 | 914 (799 + 115 oversampled) |
+| Valid images | 40 | 100 |
+| Test images | 35 | 100 |
+
+### Targeted Augmentation (Applied During Training)
 
 Augmented copies of minority class images were created using 6 random transforms:
 
@@ -460,16 +595,6 @@ Augmented copies of minority class images were created using 6 random transforms
 - **Color jitter** (HSV space)
 - **Gaussian blur**
 - **Gaussian noise**
-
-### Results
-
-| Metric | Original Split | Stratified Split |
-|--------|----------------|------------------|
-| Imbalance ratio | 221.5x | ~13x |
-| Zero-train classes | 4 | 0 |
-| Train images | 924 | 799 (+oversampled) |
-| Valid images | 40 | 100 |
-| Test images | 35 | 100 |
 
 ---
 
@@ -506,9 +631,9 @@ The analysis reveals a highly concentrated shelf layout where the **top 10 SKUs 
 ### Share of Shelf Distribution
 
 <!-- Place your doughnut chart image here. See instructions below. -->
-![Share of Shelf Distribution - Share of Shelf Top 20](assets/share_of_shelf_top20.png)
+![Share of Shelf Distribution - Top 10 SKUs vs Others](assets/share_of_shelf_doughnut.png)
 
-> The full analysis with 5 visualizations (bar chart, full distribution, doughnut, confidence scatter, detection heatmap) is provided in the Google Drive.
+> The full analysis with 5 visualizations (bar chart, full distribution, doughnut, confidence scatter, detection heatmap) is generated by `notebooks/colab_share_of_shelf.py`.
 
 ---
 
