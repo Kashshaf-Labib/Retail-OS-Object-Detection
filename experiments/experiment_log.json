@@ -9,7 +9,7 @@
         "recall": 66.47,
         "map50": 76.87,
         "map50_95": 46.38,
-        "notes": "Baseline — default YOLOv11 nano",
+        "notes": "Baseline -- default YOLOv11 nano",
         "is_best": false
     },
     {
@@ -23,7 +23,7 @@
         "recall": 66.90,
         "map50": 69.84,
         "map50_95": 44.86,
-        "notes": "Lower confidence threshold (0.15) — marginal recall gain, precision dropped",
+        "notes": "Lower confidence threshold (0.15) -- marginal recall gain, precision dropped",
         "is_best": false
     },
     {
@@ -32,11 +32,11 @@
         "imgsz": 640,
         "dataset": "original",
         "augmentation": "enhanced",
-        "precision": 68.78,
-        "recall": 76.88,
+        "precision": 76.88,
+        "recall": 68.78,
         "map50": 79.21,
         "map50_95": 33.54,
-        "notes": "Enhanced augmentation (mosaic, mixup, color jitter) — +2.3% recall",
+        "notes": "Enhanced augmentation (mosaic, mixup, color jitter) -- +2.3% recall",
         "is_best": false
     },
     {
@@ -49,7 +49,7 @@
         "recall": 76.58,
         "map50": 84.52,
         "map50_95": 50.89,
-        "notes": "Larger model — huge jump in all metrics",
+        "notes": "Larger model -- huge jump in all metrics",
         "is_best": false
     },
     {
@@ -60,10 +60,10 @@
         "augmentation": "enhanced",
         "precision": 72.68,
         "recall": 85.62,
-        "map50": 87.99,
-        "map50_95": 54.73,
-        "notes": "Best overall recall — 1280px captures small products. Precision trade-off from higher resolution",
-        "is_best": true
+        "map50": null,
+        "map50_95": null,
+        "notes": "High resolution 1280px captures small products, strong recall but precision trade-off",
+        "is_best": false
     },
     {
         "id": "rtdetr_l_baseline",
@@ -75,7 +75,7 @@
         "recall": 85.76,
         "map50": 88.36,
         "map50_95": 54.09,
-        "notes": "Transformer architecture — highest raw recall but low precision on 76 fine-grained classes",
+        "notes": "Transformer architecture -- highest raw recall but low precision on 76 fine-grained classes",
         "is_best": false
     },
     {
@@ -88,7 +88,65 @@
         "recall": 85.56,
         "map50": 86.93,
         "map50_95": 47.75,
-        "notes": "Extra-large transformer — no improvement over RT-DETR-L, confirms classification is the bottleneck",
+        "notes": "Extra-large transformer -- no improvement over RT-DETR-L, confirms overfitting on small dataset",
+        "is_best": false
+    },
+    {
+        "id": "v8m_stratified_os",
+        "model": "YOLOv8m",
+        "imgsz": 640,
+        "dataset": "stratified + oversample",
+        "split": "80/10/10 stratified",
+        "augmentation": "enhanced",
+        "precision": 81.15,
+        "recall": 92.75,
+        "map50": 96.00,
+        "map50_95": 69.57,
+        "notes": "BEST MODEL -- stratified split + oversampling solved class imbalance. Highest recall (92.75%) and mAP@50 (96.00%)",
+        "is_best": true
+    },
+    {
+        "id": "v11m_stratified_os",
+        "model": "YOLOv11m",
+        "imgsz": 640,
+        "dataset": "stratified + oversample",
+        "split": "80/10/10 stratified",
+        "augmentation": "enhanced",
+        "precision": 81.43,
+        "recall": 90.42,
+        "map50": 93.48,
+        "map50_95": 64.11,
+        "notes": "Strong results but slightly behind YOLOv8m on same stratified dataset",
+        "is_best": false
+    },
+    {
+        "id": "v11m_stratified_sgd",
+        "model": "YOLOv11m",
+        "imgsz": 640,
+        "dataset": "stratified",
+        "split": "80/10/10 stratified",
+        "optimizer": "SGD",
+        "augmentation": "enhanced",
+        "precision": 82.48,
+        "recall": 88.98,
+        "map50": 93.68,
+        "map50_95": 58.32,
+        "notes": "YOLOv11m with SGD optimizer on stratified split -- good precision, moderate recall",
+        "is_best": false
+    },
+    {
+        "id": "v8m_stratified_sgd_no_os",
+        "model": "YOLOv8m",
+        "imgsz": 640,
+        "dataset": "stratified (no oversample)",
+        "split": "80/10/10 stratified",
+        "optimizer": "SGD",
+        "augmentation": "enhanced",
+        "precision": 83.45,
+        "recall": 89.39,
+        "map50": 95.66,
+        "map50_95": 67.85,
+        "notes": "YOLOv8m with SGD, no oversampling -- highest precision (83.45%) and strong mAP@50-95 (67.85%)",
         "is_best": false
     }
 ]
