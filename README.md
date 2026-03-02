@@ -2,7 +2,7 @@
   <h1 align="center">🔍 ShelfVision AI</h1>
   <p align="center">
     <strong>End-to-End Retail Shelf Detection with MLOps</strong><br>
-    YOLOv11m · 76 SKU Classes · 1280×1280 · FastAPI · Docker · Airflow · CI/CD
+    YOLOv8m · YOLOv11m · 76 SKU Classes · FastAPI · Docker · Airflow · CI/CD
   </p>
 </p>
 
@@ -47,15 +47,16 @@
 3. **Data Drift Monitoring** — PSI-based drift detection with automatic retraining triggers
 4. **Full MLOps Pipeline** — Docker, CI/CD, Airflow orchestration, experiment tracking, and model versioning
 
-### Key Results
+### Key Results (Best Model — YOLOv8m Stratified+Oversample)
 
 | Metric | Value |
 |--------|-------|
-| **Precision** | 72.68% |
-| **Recall** | 85.62% |
+| **Precision** | 81.15% |
+| **Recall** | 92.75% |
+| **mAP@50** | 96.00% |
+| **mAP@50-95** | 69.57% |
 | **Classes** | 76 retail SKUs |
-| **Image Size** | 1280×1280 |
-| **Model** | YOLOv11m |
+| **Model** | YOLOv8m (Stratified Split + Oversample) |
 
 ---
 
@@ -294,7 +295,7 @@ The model selection process was iterative. Each experiment addressed limitations
 
 ---
 
-### Experiment 5: YOLOv11m at 1280×1280 ⭐ Selected Model
+### Experiment 5: YOLOv11m at 1280×1280
 
 | Metric | Value | Δ from Experiment 4 |
 |--------|-------|:-------------------:|
@@ -305,7 +306,7 @@ The model selection process was iterative. Each experiment addressed limitations
 
 **Strategy**: Double the input resolution from 640 to 1280 pixels to capture small products that were being missed.
 
-**Observation**: ✅ **Best model for our use case.** Recall reached **85.62%** — the model now finds 85% of all products on the shelf. Precision dropped to 72.68% as the higher resolution occasionally detected background textures as products. For retail shelf monitoring, **high recall is more important than precision** — it's better to flag an extra detection than to miss a product entirely. The precision trade-off was acceptable for this application.
+**Observation**: ✅ **Strong recall improvement.** Recall reached **85.62%** — the model now finds 85% of all products on the shelf. Precision dropped to 72.68% as the higher resolution occasionally detected background textures as products. This confirmed that resolution scaling helps recall substantially, but the original imbalanced dataset was limiting both precision and overall mAP.
 
 ---
 
@@ -337,21 +338,53 @@ The model selection process was iterative. Each experiment addressed limitations
 
 **Observation**: ❌ **No improvement — actually worse.** The larger transformer overfitted on the small dataset (924 training images). This confirmed that the **bottleneck is the dataset size and class imbalance, not the model architecture**. More parameters without more data simply leads to overfitting, especially for fine-grained classification.
 
+---
+
+### Experiment 8: YOLOv8m Stratified+Oversample (640×640) ⭐ Best Model
+
+| Metric | Value | Δ from Experiment 5 |
+|--------|-------|:-------------------:|
+| Precision | **81.15%** | ↑ 8.47% |
+| Recall | **92.75%** | ↑ 7.13% |
+| mAP@50 | **96.00%** | — |
+| mAP@50-95 | **69.57%** | — |
+
+**Strategy**: Address the root cause — the dataset split itself. Pool all images, apply **stratified 80/10/10 split** based on dominant class per image (ensuring every class appears in train), then oversample minority classes to ≥15 instances. Train **YOLOv8m** at 640×640.
+
+**Observation**: ✅ **Best result across all experiments.** Stratified splitting combined with oversampling solved the class imbalance problem at the data level. Precision jumped to **81.15%** (+8.47%) and recall reached **92.75%** (+7.13%) — both the highest ever. mAP@50 hit **96.00%**, a massive leap over all previous experiments. This proved that **fixing the data distribution matters more than scaling model size or resolution**. YOLOv8m's architecture was also well-suited for this task at 640 resolution.
+
+---
+
+### Experiment 9: YOLOv11m Stratified+Oversample (640×640)
+
+| Metric | Value | Δ from Experiment 8 |
+|--------|-------|:-------------------:|
+| Precision | 81.43% | ↑ 0.28% |
+| Recall | 90.42% | ↓ 2.33% |
+| mAP@50 | 93.48% | ↓ 2.52% |
+| mAP@50-95 | 64.11% | ↓ 5.46% |
+
+**Strategy**: Same stratified+oversample dataset, but train with **YOLOv11m** instead of YOLOv8m to compare architectures on the fixed dataset.
+
+**Observation**: ✅ **Strong results, but slightly behind YOLOv8m.** YOLOv11m achieved very similar precision (81.43%) but lower recall (90.42% vs 92.75%) and mAP@50 (93.48% vs 96.00%). The newer YOLOv11 architecture didn't provide a clear advantage on this dataset size. This suggests that YOLOv8m's training dynamics (convergence, augmentation response) are better tuned for smaller datasets with 76 fine-grained classes.
+
 ### Summary: Precision vs Recall Across All Experiments
 
 ```
-         Precision    Recall     Strategy
-         ─────────    ──────     ────────────────────────────────────
-v11n      74.87%      66.47%    Baseline
-v11n LC   67.84%      66.90%    Lower confidence → ❌ No help
-v11n Aug  76.88%      68.78%    Augmentation → ↑ Moderate gain
-v11m      80.99%      76.58%    Bigger model → ✅ Big jump
-v11m@1280 72.68%      85.62%    Higher resolution → ⭐ Best recall
-DETR-L    65.55%      85.76%    Transformer → High recall, low precision
-DETR-X    63.67%      85.56%    Bigger transformer → ❌ Overfitting
+               Precision    Recall     Strategy
+               ─────────    ──────     ────────────────────────────────────
+v11n            74.87%      66.47%    Baseline
+v11n LC         67.84%      66.90%    Lower confidence → ❌ No help
+v11n Aug        76.88%      68.78%    Augmentation → ↑ Moderate gain
+v11m            80.99%      76.58%    Bigger model → ✅ Big jump
+v11m@1280       72.68%      85.62%    Higher resolution → Good recall
+DETR-L          65.55%      85.76%    Transformer → High recall, low precision
+DETR-X          63.67%      85.56%    Bigger transformer → ❌ Overfitting
+v8m+Strat       81.15%      92.75%    Stratified split → ⭐ BEST MODEL
+v11m+Strat      81.43%      90.42%    Stratified + v11m → Strong runner-up
 ```
 
-**Key Takeaway**: The best results came from **scaling the input resolution** (not the model size) combined with the medium-sized YOLO architecture. The transformer approaches showed that the classification bottleneck stems from the severely imbalanced dataset, not model capacity.
+**Key Takeaway**: The biggest improvement came from **fixing the dataset split** (stratified sampling + oversampling), not from model architecture or resolution changes. The stratified approach increased recall from 85.62% → 92.75% and mAP@50 from ~84% → 96.00%. **Data quality > model complexity.**
 
 ---
 
@@ -713,10 +746,12 @@ retail-shelf-detection/
 | 1 | YOLOv11n | 640 | Original | 74.87% | 66.47% | 76.87% | 46.38% | Baseline — decent P, low R |
 | 2 | YOLOv11n | 640 | Original | 67.84% | 66.90% | 69.84% | 44.86% | Lower conf → ❌ No help |
 | 3 | YOLOv11n | 640 | Original | 76.88% | 68.78% | 79.21% | 33.54% | Augmentation → moderate gain |
-| 4 | YOLOv11m | 640 | Original | **80.99%** | 76.58% | **84.52%** | **50.89%** | Bigger model → ✅ Big jump |
-| 5 | **YOLOv11m** | **1280** | **Original** | 72.68% | **85.62%** | — | — | **⭐ Best recall** |
+| 4 | YOLOv11m | 640 | Original | 80.99% | 76.58% | 84.52% | 50.89% | Bigger model → ✅ Big jump |
+| 5 | YOLOv11m | 1280 | Original | 72.68% | 85.62% | — | — | Higher res → good recall |
 | 6 | RT-DETR-L | 640 | Original | 65.55% | 85.76% | 88.36% | 54.09% | Transformer — low precision |
 | 7 | RT-DETR-X | 640 | Original | 63.67% | 85.56% | 86.93% | 47.75% | Bigger transformer → overfitting |
+| 8 | **YOLOv8m** | **640** | **Stratified** | **81.15%** | **92.75%** | **96.00%** | **69.57%** | **⭐ BEST — stratified split** |
+| 9 | YOLOv11m | 640 | Stratified | 81.43% | 90.42% | 93.48% | 64.11% | Strong runner-up |
 
 ---
 
